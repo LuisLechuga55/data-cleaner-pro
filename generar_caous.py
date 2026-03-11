@@ -19,3 +19,6 @@ df = pd.DataFrame(data)
 # Guardamos el archivo para probar
 df.to_excel('PRUEBA_DE_FUEGO.xlsx', index=False)
 print("🚀 ¡Archivo 'PRUEBA_DE_FUEGO.xlsx' creado! Súbelo a tu app.")
+
+# . venv/Scripts/activate
+# streamlit run app.py

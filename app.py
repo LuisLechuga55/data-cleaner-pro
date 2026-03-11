@@ -5,39 +5,124 @@ from datetime import datetime
 
 st.set_page_config(page_title="Smart Data Audit Pro", page_icon="📈", layout="wide")
 
+if "file_key" not in st.session_state:
+    st.session_state.file_key = 0
+
+# 1. FUNCIÓN DE REINICIO
+def reiniciar_app():
+    # Cambiamos la llave para que el widget sea "nuevo" para Streamlit
+    st.session_state.file_key += 1
+    
+    # Limpiamos todo el estado de la sesión
+    for key in st.session_state.keys():
+        if key != "file_key": # Mantenemos solo la llave para que no se resetee a 0
+            del st.session_state[key]
+    
+    st.rerun()
+
+
 # --- ESTILO CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    /* Configuración Global */
     html, body, [class*="css"], .stMarkdown, p, h1, h2, h3, span {
         font-family: 'Inter', sans-serif;
     }
+    
+    /* Fondo y contenedores */
+    .stApp {
+        background-color: #0E1117;
+    }
+
+    /* Tarjetas de Métricas (Glassmorphism) */
     [data-testid="stMetric"] {
-        background-color: #262730;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        border: 1px solid #464855;
+        background-color: rgba(38, 39, 48, 0.5);
+        padding: 25px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s ease;
     }
-    [data-testid="stMetricValue"] {
-        color: #ffffff;
-        font-size: 1.8rem;
+    
+    /* BOTÓN REINICIAR (Color Rojo sutil en el sidebar) */
+    [data-testid="stSidebar"] .stButton button {
+        border: 1px solid rgba(255, 75, 75, 0.3) !important;
+        background-color: rgba(255, 75, 75, 0.05) !important;
+        color: #FF4B4B !important;
+        font-weight: 600 !important;
     }
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: #FF4B4B !important;
+        color: white !important;
+    }
+
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        border-color: #1E90FF;
+    }
+
+    /* Títulos y Etiquetas */
     [data-testid="stMetricLabel"] {
-        color: #a0aec0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        color: #808495 !important;
+        font-weight: 600 !important;
+        letter-spacing: 1.5px !important;
+    }
+    
+    /* Botón de Descarga Custom */
+    .stDownloadButton button {
+        background-color: #1E90FF !important;
+        color: white !important;
+        border-radius: 12px !important;
+        border: none !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 700 !important;
+        width: 100%;
+        box-shadow: 0 4px 15px rgba(30, 144, 255, 0.3);
+    }
+    .stDownloadButton button:hover {
+        background-color: #00BFFF !important;
+        box-shadow: 0 6px 20px rgba(0, 191, 255, 0.4);
+    }
+
+    /* Tabs (Pestañas) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        border-radius: 10px 10px 0 0;
+        padding: 0 20px;
+        background-color: #161B22;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #1E90FF !important;
+        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.sidebar.title("⚙️ Panel de Control")
+
 st.title("Smart Data Audit Pro")
 st.caption("Transforma tus datos sucios en decisiones inteligentes en segundos.")
 
-archivo_subido = st.file_uploader("Sube tu archivo Excel", type=['xlsx'])
+placeholder = st.empty() 
+
+with placeholder.container():
+    archivo_subido = st.file_uploader(
+        "Sube tu archivo Excel", 
+        type=['xlsx'], 
+        key=f"cargador_{st.session_state.file_key}" 
+    )
 
 if archivo_subido is not None:
+    if st.sidebar.button("🔄 Reiniciar / Nuevo Archivo", use_container_width=True):
+        reiniciar_app()
+
+    st.sidebar.divider()
+
     try:
         df_raw = pd.read_excel(archivo_subido)
         
