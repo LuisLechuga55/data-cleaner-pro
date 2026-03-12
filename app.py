@@ -156,7 +156,7 @@ placeholder = st.empty()
 with placeholder.container():
     archivo_subido = st.file_uploader(
         "Sube tu archivo Excel", 
-        type=['xlsx'], 
+        type=["csv", "xlsx"],
         key=f"cargador_{st.session_state.file_key}" 
     )
 
@@ -165,6 +165,11 @@ if archivo_subido is not None:
         progress_placeholder = st.empty()
         status_text = st.empty()
         bar = progress_placeholder.progress(0)
+
+        if archivo_subido.name.endswith('.csv'):
+            df_raw = pd.read_csv(archivo_subido)
+        else:
+            df_raw = pd.read_excel(archivo_subido)
 
         for i in range(1, 101):
             # ACTUALIZACIÓN DE LA BARRA
@@ -188,12 +193,14 @@ if archivo_subido is not None:
         status_text.empty()
 
         # 3. CARGA REAL DE DATOS
-        df_raw = pd.read_excel(archivo_subido)
+        # df_raw = pd.read_excel(archivo_subido)
         
         # --- 1. LIMPIEZA DE CABECERAS ---
         df_raw.columns = [str(col).strip().replace('_', ' ').title() for col in df_raw.columns]
-        COL_PRECIO = 'Price'
-        COL_GENERO = 'Gender'
+        lista_columnas = df_raw.columns.tolist()
+
+        COL_PRECIO = next((c for c in lista_columnas if 'Price' in c or 'Sales' in c or 'Precio' in c), lista_columnas[0])
+        COL_GENERO = next((c for c in lista_columnas if any(k in c for k in ['Category', 'Gender', 'Tipo', 'Genre', 'Género', 'Categoría'])), lista_columnas[0])
 
         # --- 2. LIMPIEZA PROFUNDA DE DATOS ---
         for col in df_raw.columns:
@@ -300,28 +307,31 @@ if archivo_subido is not None:
                 st.dataframe(df_filtrado, use_container_width=True, height=400)
 
         with tab2:
-                st.subheader("Detección de Anomalías")
-                if modo_perfecto:
-                    st.success("✨ **¡Modo Datos Perfectos Activado!**")
-                    st.info("Los errores han sido filtrados. Apaga el modo en el panel lateral para ver el detalle de anomalías.")
-                else:
-                    en_cero_audit = df_filtrado[df_filtrado[COL_PRECIO] == 0]
-                    # Usamos el filtro de nulos que ya tenías
-                    mascara_nulos_audit = df_filtrado.astype(str).apply(lambda col: col.str.contains("Sin Datos|None|nan", case=False)).any(axis=1)
-                    con_nulos_audit = df_filtrado[mascara_nulos_audit]
+            st.subheader("Detección de Anomalías")
+            if modo_perfecto:
+                st.success("✨ **¡Modo Datos Perfectos Activado!**")
+                st.info("Los errores han sido filtrados. Apaga el modo en el panel lateral para ver el detalle de anomalías.")
+            else:
+                # 1. Identificamos errores de precio (Ceros)
+                en_cero_audit = df_filtrado[df_filtrado[COL_PRECIO] == 0].copy()
+                en_cero_audit['Motivo'] = "🚩 Precio en $0 o nulo"
+
+                # 2. Identificamos nulos
+                mascara_nulos_audit = df_filtrado.astype(str).apply(lambda col: col.str.contains("Sin Datos|None|nan", case=False)).any(axis=1)
+                con_nulos_audit = df_filtrado[mascara_nulos_audit].copy()
+                con_nulos_audit['Motivo'] = "ℹ️ Celdas vacías detectadas"
+
+                # 3. Unimos ambos reportes
+                df_diagnostico = pd.concat([en_cero_audit, con_nulos_audit]).drop_duplicates()
+
+                if not df_diagnostico.empty:
+                    st.warning(f"🔍 Se han detectado {len(df_diagnostico)} registros con observaciones")
                     
-                    if not en_cero_audit.empty or not con_nulos_audit.empty:
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            if not en_cero_audit.empty:
-                                st.warning(f"🚩 {len(en_cero_audit)} registros con Precio $0")
-                                st.dataframe(en_cero_audit, use_container_width=True, height=250)
-                        with col_b:
-                            if not con_nulos_audit.empty:
-                                st.info(f"ℹ️ {len(con_nulos_audit)} registros con datos faltantes")
-                                st.dataframe(con_nulos_audit, use_container_width=True, height=250)
-                    else:
-                        st.success("✅ Tu selección actual no tiene anomalías.")
+                    # Reordenamos para que 'Motivo' sea la primera columna
+                    cols = ['Motivo'] + [c for c in df_diagnostico.columns if c != 'Motivo']
+                    st.dataframe(df_diagnostico[cols], use_container_width=True, height=400)
+                else:
+                    st.success("✅ Tu selección actual no tiene anomalías.")
 
         with tab3:
                 st.subheader("Análisis Visual Avanzado")
