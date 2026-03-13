@@ -177,13 +177,13 @@ if archivo_subido is not None:
             
             # ACTUALIZACIÓN DEL TEXTO
             if i < 30:
-                status_text.caption("🔍 Escaneando estructura de celdas...")
+                status_text.caption("Escaneando estructura de celdas...")
             elif i < 60:
-                status_text.caption("🛡️ Aplicando filtros de limpieza profunda...")
+                status_text.caption("Aplicando filtros de limpieza profunda...")
             elif i < 90:
-                status_text.caption("📊 Generando matrices de auditoría...")
+                status_text.caption("Generando matrices de auditoría...")
             else:
-                status_text.caption("✨ Finalizando optimización...")
+                status_text.caption("Finalizando optimización...")
             
             time.sleep(0.008) # Un poco más rápido para que no sea tedioso
 
@@ -227,7 +227,7 @@ if archivo_subido is not None:
                 if diferencia > 0:
                     st.success(f"👯 Se eliminaron {diferencia} filas.")
                 else:
-                    st.info("✨ Sin duplicados.")
+                    st.info("Sin duplicados.")
 
             # Lógica B: Modo Perfecto (Movido aquí adentro para el feedback visual)
             # Nota: Esta lógica se aplicará después sobre el df_filtrado más abajo
@@ -309,7 +309,7 @@ if archivo_subido is not None:
         with tab2:
             st.subheader("Detección de Anomalías")
             if modo_perfecto:
-                st.success("✨ **¡Modo Datos Perfectos Activado!**")
+                st.success("**Modo Datos Perfectos Activado**")
                 st.info("Los errores han sido filtrados. Apaga el modo en el panel lateral para ver el detalle de anomalías.")
             else:
                 # 1. Identificamos errores de precio (Ceros)
@@ -346,7 +346,7 @@ if archivo_subido is not None:
 
                     col_izq, col_der = st.columns(2)
                     with col_izq:
-                        st.markdown("##### 💰 Inversión por Género (%)")
+                        st.markdown("##### Inversión %")
                         import altair as alt
                         grafica_pie = alt.Chart(df_pie).mark_arc().encode(
                             theta=alt.Theta(field=COL_PRECIO, type="quantitative"),
@@ -356,12 +356,12 @@ if archivo_subido is not None:
                         st.altair_chart(grafica_pie, use_container_width=True)
 
                     with col_der:
-                        st.markdown("##### 📈 Curva de Valor (Precios)")
+                        st.markdown("##### Curva de Valor")
                         df_linea = df_filtrado[COL_PRECIO].sort_values().reset_index(drop=True)
                         st.line_chart(df_linea)
 
                     st.divider()
-                    st.markdown("##### 📝 Resumen Inteligente")
+                    st.markdown("##### Resumen Inteligente")
                     df_res = df_filtrado.groupby(COL_GENERO)[COL_PRECIO].sum().sort_values(ascending=False)
 
                     if not df_res.empty:
@@ -371,7 +371,7 @@ if archivo_subido is not None:
                         porcentaje_impacto = (lider_valor / total_actual) * 100 if total_actual > 0 else 0
 
                         c1, c2 = st.columns(2)
-                        c1.info(f"🏆 **Líder:** {lider_nombre} (${lider_valor:,.2f})")
+                        c1.info(f"**Líder:** {lider_nombre} (${lider_valor:,.2f})")
                         c2.success(f"📊 **Impacto:** {lider_nombre} representa el {porcentaje_impacto:.1f}% de lo filtrado.")
                 else:
                     st.warning("⚠️ No hay datos para visualizar.")
